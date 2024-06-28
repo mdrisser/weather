@@ -1,7 +1,7 @@
 # Weather
 A pair of Python scripts to collect weather information from weather.gov. One script retrieves forecasts, the second retrieves current weather observations.
 
-The script share a common configuration files, written in TOML to determine which stations to collect the information from.
+The script share a common configuration file, written in TOML to determine which stations to collect the information from.
 ## Scripts
 ### weather.py
 This script pulls the weather information for the configured weather stations
