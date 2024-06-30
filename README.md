@@ -7,7 +7,7 @@ The script share a common configuration file, written in TOML to determine which
 This script pulls the weather information for the configured weather stations
 
 ### wx_condix.py
-This script pulls the latest weather observations from the selected weather station.
+This script pulls the latest weather observations from the selected weather station. Uses the [convert](https://github.com/mdrisser/convert) and [utilities](https://github.com/mdrisser/utilities) libraries
 
 ### weather.toml
 This is the configuration file that is shared by both scripts.
