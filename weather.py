@@ -56,8 +56,6 @@ def get_places():
 def get_weather():
     global logger
 
-    logger.info("Started weather.py")
-
     places = get_places()
 
     # Ask the user which station to get the information from
@@ -96,10 +94,8 @@ def get_weather():
         table.add_column("Wind", justify="left", style="cyan", no_wrap=True)
         table.add_column("Forecast", justify="left", no_wrap=False)
         
-        # Loop through each day/night in the forecast...
-        for day in wx_json['properties']['periods']:
-            #...add a row to the table for the day/night
-            table.add_row(day['name'], str(day['temperature']) + day['temperatureUnit'], str(day['windSpeed']) + ' ' + day['windDirection'], day['shortForecast'])
+        # Loop through each day/night in the forecast and add a row to the table for each day/night
+        map(lambda day: table.add_row(day['name'], str(day['temperature']) + day['temperatureUnit'], str(day['windSpeed']) + ' ' +day['windDirection'], day['shortForecast']))
         
         # Print the table out to the screen
         console = Console()
