@@ -96,14 +96,20 @@ def get_weather():
         table.add_column("Temp", justify="left", style="bold red", no_wrap=True)
         table.add_column("Wind", justify="left", style="cyan", no_wrap=True)
         table.add_column("Forecast", justify="left", no_wrap=False)
+        table.add_column("Chance of Precip.", justify="left", style="bold blue")
         
         periods = wx_json['properties']['periods']
-        #print(periods)
+        print(periods)
         # Loop through each day/night in the forecast and add a row to the table for each day/night
         # Loop through each day/night in the forecast...
         for day in wx_json['properties']['periods']:
+            # Check to see if there is a value for precipitation
+            if day['probabilityOfPrecipitation']['value'] == None:
+                precip = '0%'
+            else:
+                precip = f"{day['probabilityOfPrecipitation']['value']}%"
             #...add a row to the table for the day/night
-            table.add_row(day['name'], str(day['temperature']) + day['temperatureUnit'], str(day['windSpeed']) + ' ' + day['windDirection'], day['shortForecast'])
+            table.add_row(day['name'], str(day['temperature']) + day['temperatureUnit'], str(day['windSpeed']) + ' ' + day['windDirection'], day['shortForecast'], precip)
             
         #list(map(lambda day: table.add_row(day['name'], str(day['temperature'])+day['temperatureUnit'], str(day['windSpeed'])+' '+day['windDirection'], day['shortForecast']),
         #   periods))   
