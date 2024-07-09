@@ -99,7 +99,7 @@ def get_weather():
         table.add_column("Chance of Precip.", justify="left", style="bold blue")
         
         periods = wx_json['properties']['periods']
-        print(periods)
+        
         # Loop through each day/night in the forecast and add a row to the table for each day/night
         # Loop through each day/night in the forecast...
         for day in wx_json['properties']['periods']:
