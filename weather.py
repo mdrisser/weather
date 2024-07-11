@@ -6,6 +6,7 @@ import tomllib
 import logging
 
 from rich.prompt import Prompt
+from rich.prompt import IntPrompt
 
 
 CONFIG_DIR = "/home/mike/.config/weather/"
@@ -56,12 +57,26 @@ def get_places():
     return places
 
 
-def get_weather():
+def addrow(tbl,d):
+    # Check to see if there is a value for precipitation
+    if d['probabilityOfPrecipitation']['value'] == None:
+        precip = '0%'
+    else:
+        precip = f"{d['probabilityOfPrecipitation']['value']}%"
+        
+    tbl.add_row(d['name'], str(d['temperature']) + d['temperatureUnit'], str(d['windSpeed']) + ' ' + d['windDirection'], d['shortForecast'], precip)
+
+def get_forecast():
+    """
+    Takes the chosen loation, retrieves the items need for the API call, puts them all together then fetches the weather 
+    forecast as a JSON file. Once the forecast is retrieved, parses the JSON, prepares the output and prints it to the screen.
+    """
     import rich.box
     from rich import print
     from rich.console import Console
     from rich.table import Table
 
+    # Grab the logger we prepared when the script was started
     global logger
 
     # Loop through the stations...
@@ -73,17 +88,20 @@ def get_weather():
             noaa_grid_x = station['noaa_grid_x']
             noaa_grid_y = station['noaa_grid_y']
 
-    # Fetch the weather forecast
+    # Get things ready to fetch the forecast
     logger.info(f"Fetching weather for: {locale}")
     wx_url = f"https://api.weather.gov/gridpoints/{noaa_office}/{noaa_grid_x},{noaa_grid_y}/forecast"
     req_headers = {'user-agent': 'weather.py/mdrisser@gmail.com'}
 
+    # Add a blank line to make the whole thing look a little cleaner
     print()
 
     try:
+        # Fetch the forecast
         r = requests.get(wx_url, headers=req_headers)
         r.raise_for_status()
     except Exception as err:
+        # If there was some type of error, shows the user and log it
         logger.error(err)
         print(f"Error: [bold red]{err}[/bold red]")
     else:
@@ -102,24 +120,23 @@ def get_weather():
         
         # Loop through each day/night in the forecast and add a row to the table for each day/night
         # Loop through each day/night in the forecast...
-        for day in wx_json['properties']['periods']:
-            # Check to see if there is a value for precipitation
-            if day['probabilityOfPrecipitation']['value'] == None:
-                precip = '0%'
-            else:
-                precip = f"{day['probabilityOfPrecipitation']['value']}%"
-            #...add a row to the table for the day/night
-            table.add_row(day['name'], str(day['temperature']) + day['temperatureUnit'], str(day['windSpeed']) + ' ' + day['windDirection'], day['shortForecast'], precip)
+        #for day in wx_json['properties']['periods']:
+        #    # Check to see if there is a value for precipitation
+        #    if day['probabilityOfPrecipitation']['value'] == None:
+        #        precip = '0%'
+        #    else:
+        #        precip = f"{day['probabilityOfPrecipitation']['value']}%"
+        #    #...add a row to the table for the day/night
+        #    table.add_row(day['name'], str(day['temperature']) + day['temperatureUnit'], str(day['windSpeed']) + ' ' + day['windDirection'], day['shortForecast'], precip)
             
-        #list(map(lambda day: table.add_row(day['name'], str(day['temperature'])+day['temperatureUnit'], str(day['windSpeed'])+' '+day['windDirection'], day['shortForecast']),
-        #   periods))   
+        list(map(lambda day: addrow(table, day), periods))   
         
         # Print the table out to the screen
         console = Console()
         console.print(table)
 
 
-def get_wxcondix():
+def get_conditions():
     import convert.convert as Convert
     import convert.temperature as temp
     import convert.speed as speed
@@ -129,23 +146,27 @@ def get_wxcondix():
     from rich.prompt import Prompt
     from tabulate import tabulate
 
+    # Grab the logger we prepared when the script was started
     global logger
 
+    # Check our list of stations...
     for station in stations:
+        #...once we find it...
         if location == station['name']:
+            #...grab the info we need for the API request
             locale = station['locale']
-            noaa_office = station['noaa_office']
-            noaa_grid_x = station['noaa_grid_x']
-            noaa_grid_y = station['noaa_grid_y']
             station_id = station['station_id']
 
+    # Prepare the API request
     wx_url = f"https://api.weather.gov/stations/{station_id}/observations/latest"
-
     req_headers = {'user-agent': 'weather.py/mdrisser@gmail.com'}
 
+    # A blank line to make things look a little cleaner
     print()
 
     try:
+        # Attempt tho fetch the weather conditions
+        # TODO: Move this into a function for both get_forecast() and get_conditions() as this part is the same for both...
         r = requests.get(wx_url, headers=req_headers)
         r.raise_for_status()
     except Exception as err:
@@ -153,57 +174,62 @@ def get_wxcondix():
         print(f"Error: [bold red]{err}[/bold red]")
     else:
         wx_json = json.loads(r.text)
-        
-        observations = wx_json['properties']
-        title = f"Current Weather Conditions\nin {locale}"
+    
+    # Start putting together the table to display to the user
+    observations = wx_json['properties']
+    title = f"Current Weather Conditions\nin {locale}"
+    
+     # The following statements really should be self-explanitory
+    if observations['temperature']['value'] != None:
+        temperature = f"{round(temp.c_to_f(observations['temperature']['value']))}{term.deg_sign} F"
+    else:
+        temperature = "N/A"
 
-        if observations['temperature']['value'] != None:
-            temperature = f"{round(temp.c_to_f(observations['temperature']['value']))}{term.deg_sign} F"
-        else:
-            temperature = "N/A"
+    if observations['dewpoint']['value'] != None:
+        dewpoint = f"{round(temp.c_to_f(observations['dewpoint']['value']))}{term.deg_sign} F"
+    else:
+        dewpoint = "N/A"
 
-        if observations['dewpoint']['value'] != None:
-            dewpoint = f"{round(temp.c_to_f(observations['dewpoint']['value']))}{term.deg_sign} F"
-        else:
-            dewpoint = "N/A"
+    if observations['relativeHumidity']['value'] != None:
+        humidity = f"{round(observations['relativeHumidity']['value'])}%"
+    else:
+        humidity = "N/A"
+    
+    wind_dir = observations['windDirection']['value']
 
-        if observations['relativeHumidity']['value'] != None:
-            humidity = f"{round(observations['relativeHumidity']['value'])}%"
-        else:
-            humidity = "N/A"
-        
-        wind_dir = observations['windDirection']['value']
+    if wind_dir == None:
+        wind_dir = 0
+    
+    cardinal = Convert.angle_to_card(wind_dir)
+    wind_direction = f"{cardinal} ({wind_dir}{term.deg_sign})"
 
-        if wind_dir == None:
-            wind_dir = 0
-        
-        cardinal = Convert.angle_to_card(wind_dir)
-        wind_direction = f"{cardinal} ({wind_dir}{term.deg_sign})"
+    wind_speed = observations['windSpeed']['value']
 
-        wind_speed = observations['windSpeed']['value']
+    if wind_speed == None:
+        wind_speed = "0 mph"
+    else:
+        wind_speed = f"{round(speed.kph_to_mph(wind_speed))} mph"
 
-        if wind_speed == None:
-            wind_speed = "0 mph"
-        else:
-            wind_speed = f"{round(speed.kph_to_mph(wind_speed))} mph"
+    gust = observations['windGust']['value']
+    if gust:
+        gust = f"{round(speed.kph_to_mph(gust))}"
+    else:
+        gust = "None"
 
-        gust = observations['windGust']['value']
-        if gust:
-            gust = f"{round(speed.kph_to_mph(gust))}"
-        else:
-            gust = "None"
+    # Put it all together so that tabulate() can generate the table
+    wx_data = [
+        ['Temperature', temperature],
+        ['Dewpoint', dewpoint],
+        ['Humidity', humidity],
+        ['Wind Direction', wind_direction],
+        ['Wind Speed', wind_speed],
+        ['Wind Gust', gust],
+    ]
 
-        wx_data = [
-            ['Temperature', temperature],
-            ['Dewpoint', dewpoint],
-            ['Humidity', humidity],
-            ['Wind Direction', wind_direction],
-            ['Wind Speed', wind_speed],
-            ['Wind Gust', gust],
-        ]
-
-        print(title)
-        print(tabulate(wx_data))
+    print(title)
+    
+    # Generate the table and print it to the screen
+    print(tabulate(wx_data))
 
 
 if __name__ == "__main__":
@@ -214,13 +240,15 @@ if __name__ == "__main__":
     places = get_places()
     
      # Ask the user which station to get the information from
+     # Prompt and IntPrompt both handle invalid input for us
     location = Prompt.ask("Get weather for which city?", choices=places, default=default)
     
-    wx = Prompt.ask("Get?", choices=["Forecast","Conditions"], default="Forecast")
+    wx = IntPrompt.ask("Get 1) Forecast or 2) Conditions?", choices=["1","2"], default="2")
     
-    if wx == "Forecast":
-        get_weather()
+    if wx == 1:
+        get_forecast()
     else:
-        get_wxcondix()
+        get_conditions()
     
+    # A final blank line to keep things neat and clean
     print()
