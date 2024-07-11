@@ -119,16 +119,7 @@ def get_forecast():
         periods = wx_json['properties']['periods']
         
         # Loop through each day/night in the forecast and add a row to the table for each day/night
-        # Loop through each day/night in the forecast...
-        #for day in wx_json['properties']['periods']:
-        #    # Check to see if there is a value for precipitation
-        #    if day['probabilityOfPrecipitation']['value'] == None:
-        #        precip = '0%'
-        #    else:
-        #        precip = f"{day['probabilityOfPrecipitation']['value']}%"
-        #    #...add a row to the table for the day/night
-        #    table.add_row(day['name'], str(day['temperature']) + day['temperatureUnit'], str(day['windSpeed']) + ' ' + day['windDirection'], day['shortForecast'], precip)
-            
+        # Had to create a custom function to do this as lambda doesn't like calling functions of objects (e.g. table.add_row())
         list(map(lambda day: addrow(table, day), periods))   
         
         # Print the table out to the screen
