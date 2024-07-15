@@ -40,12 +40,18 @@ def prep_logger():
 
 
 def get_places():
+    """Creates a list of places to be used in the prompt
+
+    Returns:
+        list: List of places to be used in the prompt
+    """
     global default
     global logger
 
     places = []
     
     # Loop through all of the stations and get the names to use in our prompt
+    # Stations are retrieved from the config file
     for station in stations:
         places.append(station['name'])
         
@@ -58,18 +64,63 @@ def get_places():
 
 
 def addrow(tbl,d):
+    """Adds a row to the specified table. This function exists because list(map(lambda))
+    does not call functions of objects (e.g. table.add_row())
+
+    Args:
+        tbl : the table to add the row to
+        d (dict): a dictionary of values to be added to the table row
+    """
     # Check to see if there is a value for precipitation
     if d['probabilityOfPrecipitation']['value'] == None:
+        # If there isn't set precip to 0%
         precip = '0%'
     else:
+        # Otherwise, set precip to the value provided in the dictionary
         precip = f"{d['probabilityOfPrecipitation']['value']}%"
-        
+    
+    # Finally, add the row to the table that was passed in the function arguments
     tbl.add_row(d['name'], str(d['temperature']) + d['temperatureUnit'], str(d['windSpeed']) + ' ' + d['windDirection'], d['shortForecast'], precip)
 
+
+def fetch_results(url):
+    """Sends a request to the provided URL and returns the result of that request
+
+    Args:
+        url (string): the URL to send the request to
+
+    Returns:
+        request result: the result of the request
+    """
+    
+    req_headers = {'user-agent': 'weather.py/mdrisser@gmail.com'}
+    
+    try:
+        result = requests.get(url, headers=req_headers, timeout=5)
+        result.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        print(f"HTTP Error: {e}")
+        exit
+    except requests.exceptions.ConnectionError as e:
+        print(f"Connection Error: {e}")
+        exit
+    except requests.exceptions.Timeout as e:
+        print(f"Request timed out. {e}")
+        exit
+    except requests.exceptions.RequestException as e:
+        print(f"An error occured: {e}")
+        exit
+
+    
+    return result
+
+    
 def get_forecast():
     """
-    Takes the chosen loation, retrieves the items need for the API call, puts them all together then fetches the weather 
-    forecast as a JSON file. Once the forecast is retrieved, parses the JSON, prepares the output and prints it to the screen.
+    Takes the chosen loation, retrieves the items needed for the API call, 
+    puts them all together then fetches the weather forecast as a JSON file.
+    Once the forecast is retrieved, parses the JSON, prepares the output
+    and prints it to the screen.
     """
     import rich.box
     from rich import print
@@ -89,16 +140,15 @@ def get_forecast():
             noaa_grid_y = station['noaa_grid_y']
 
     # Get things ready to fetch the forecast
-    logger.info(f"Fetching weather for: {locale}")
+    logger.info(f"Fetching current conditions for: {locale}")
     wx_url = f"https://api.weather.gov/gridpoints/{noaa_office}/{noaa_grid_x},{noaa_grid_y}/forecast"
-    req_headers = {'user-agent': 'weather.py/mdrisser@gmail.com'}
 
     # Add a blank line to make the whole thing look a little cleaner
     print()
 
     try:
         # Fetch the forecast
-        r = requests.get(wx_url, headers=req_headers)
+        r = fetch_results(wx_url)
         r.raise_for_status()
     except Exception as err:
         # If there was some type of error, shows the user and log it
@@ -119,7 +169,7 @@ def get_forecast():
         periods = wx_json['properties']['periods']
         
         # Loop through each day/night in the forecast and add a row to the table for each day/night
-        # Had to create a custom function to do this as lambda doesn't like calling functions of objects (e.g. table.add_row())
+        # Had to create a custom function to do this as lambda doesn't like calling functions of objects (e.g. table.add_row()) 
         list(map(lambda day: addrow(table, day), periods))   
         
         # Print the table out to the screen
@@ -128,6 +178,14 @@ def get_forecast():
 
 
 def get_conditions():
+    """
+    Similar to get_forecast(), excpet the URL is different.
+    
+    Takes the chosen loation, retrieves the items needed for the API call, 
+    puts them all together then fetches the weather forecast as a JSON file.
+    Once the forecast is retrieved, parses the JSON, prepares the output
+    and prints it to the screen.
+    """
     import convert.convert as Convert
     import convert.temperature as temp
     import convert.speed as speed
@@ -150,15 +208,13 @@ def get_conditions():
 
     # Prepare the API request
     wx_url = f"https://api.weather.gov/stations/{station_id}/observations/latest"
-    req_headers = {'user-agent': 'weather.py/mdrisser@gmail.com'}
 
     # A blank line to make things look a little cleaner
     print()
 
     try:
         # Attempt tho fetch the weather conditions
-        # TODO: Move this into a function for both get_forecast() and get_conditions() as this part is the same for both...
-        r = requests.get(wx_url, headers=req_headers)
+        r = fetch_results(wx_url)
         r.raise_for_status()
     except Exception as err:
         logger.error(err)
@@ -191,6 +247,7 @@ def get_conditions():
     if wind_dir == None:
         wind_dir = 0
     
+    # Converts the direction in degrees to a cardinal value (i.e. N or NE)
     cardinal = Convert.angle_to_card(wind_dir)
     wind_direction = f"{cardinal} ({wind_dir}{term.deg_sign})"
 
