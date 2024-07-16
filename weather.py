@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 
-import requests
+import argparse
 import json
-import tomllib
 import logging
+import requests
+import tomllib
 
 from rich.prompt import Prompt
 from rich.prompt import IntPrompt
@@ -13,6 +14,7 @@ CONFIG_DIR = "/home/mike/.config/weather/"
 
 
 location = ""
+wx = 0
 
 # Read the TOML configuration file
 with open(f"{CONFIG_DIR}weather.toml", "rb") as f:
@@ -280,6 +282,20 @@ def get_conditions():
     print(tabulate(wx_data))
 
 
+def get_location():
+    # Ask the user which station to get the information from
+     # Prompt and IntPrompt both handle invalid input for us
+    location = Prompt.ask("Get weather for which city?", choices=places, default=default)
+    
+    return location
+
+
+def get_type():
+    wx = IntPrompt.ask("Get 1) Forecast or 2) Conditions?", choices=["1","2"], default=2)
+    
+    return wx
+
+
 if __name__ == "__main__":
     # Prepare the logger
     logger = prep_logger()
@@ -287,16 +303,51 @@ if __name__ == "__main__":
     # Get the list of places for choices in the prompt
     places = get_places()
     
-     # Ask the user which station to get the information from
-     # Prompt and IntPrompt both handle invalid input for us
-    location = Prompt.ask("Get weather for which city?", choices=places, default=default)
+    # Build an argument parser using the built-in argparse module
+    parser = argparse.ArgumentParser(
+        prog="weather.py",
+        description="Fetch weather forecast or current conditions for a location."
+    )
     
-    wx = IntPrompt.ask("Get 1) Forecast or 2) Conditions?", choices=["1","2"], default="2")
+    parser.add_argument(
+        "--location",
+        "-l",
+        help="Location to retrieve weather for",
+        choices=places,
+        type=str
+    )
+    parser.add_argument(
+        "--type",
+        "-t",
+        help="Type of weather information, either forecast or current",
+        choices=["forecast", "current"],
+        type=str
+    )
     
+    args = parser.parse_args()
+    
+    if args.location != None:
+        location = args.location
+    else:
+        location = get_location()
+        
+    if args.type != None:
+        type = args.type
+        
+        if type == "forecast":
+            wx = 1
+        else:
+            wx = 2
+    else:
+        wx = get_type()
+    
+    # Get the forecast or current conditions as the user chose
     if wx == 1:
         get_forecast()
-    else:
+    elif wx == 2:
         get_conditions()
+    else:
+        print("There was an error, please try again.")
     
     # A final blank line to keep things neat and clean
     print()
