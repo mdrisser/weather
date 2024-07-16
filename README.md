@@ -10,5 +10,5 @@ This script prompts the user to select one of the stations listed in the config 
 Uses the [convert](https://github.com/mdrisser/convert) and [utilities](https://github.com/mdrisser/utilities) libraries
 
 ### weather.toml
-This is the configuration file that is shared by both scripts.
+This is the configuration file.
 
