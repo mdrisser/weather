@@ -12,7 +12,7 @@ from rich.prompt import IntPrompt
 
 CONFIG_DIR = "/home/mike/.config/weather/"
 
-
+DEBUG = False
 location = ""
 wx = 0
 
@@ -27,16 +27,27 @@ places = []
 noaa_office = ""
 
 
-def prep_logger():
-    """Prepare a logger """
-    logger = logging.getLogger(__name__)
+def prep_loggers():
+    """Prepare loggers """
+    logger = logging.getLogger('weather_logger')
+    
+    # Create a formatter
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    logging.basicConfig(
-        filename=config['log']['file'],
-        level=logging.INFO,
-        format='[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s',
-        datefmt='%H:%M:%S',
-    )
+    if DEBUG:
+        debug_handler = logging.getLogger('debug_logger')
+        debug_handler.setLevel(logging.DEBUG)
+        debug_handler.setFormatter(formatter)
+        logger.addHandler(debug_handler)
+        
+    # Prepare a file logger for warnings and errors
+    file_handler = logging.FileHandler(config['log']['file'])
+    file_handler.setLevel(logging.WARNING)
+    
+    file_handler.setFormatter(formatter)
+
+    # Add the handlers to the logger
+    logger.addHandler(file_handler)
 
     return logger
 
@@ -60,7 +71,9 @@ def get_places():
         # Determine which station should be our default
         if station['default'] == "True":
             default = station['name']
-            logger.info(f"Default station: {default}")
+            
+            if DEBUG:
+                logger.info(f"Default station: {default}")
     
     return places
 
@@ -74,7 +87,7 @@ def addrow(tbl,d):
         d (dict): a dictionary of values to be added to the table row
     """
     # Check to see if there is a value for precipitation
-    if d['probabilityOfPrecipitation']['value'] == None:
+    if d['probabilityOfPrecipitation']['value'] is None:
         # If there isn't set precip to 0%
         precip = '0%'
     else:
@@ -101,25 +114,28 @@ def fetch_results(url):
         result = requests.get(url, headers=req_headers, timeout=5)
         result.raise_for_status()
     except requests.exceptions.HTTPError as e:
+        logger.error(f"HTTP Error: {e}")
         print(f"HTTP Error: {e}")
         exit
     except requests.exceptions.ConnectionError as e:
+        logger.error(f"Connection Error: {e}")
         print(f"Connection Error: {e}")
         exit
     except requests.exceptions.Timeout as e:
+        logger.error(f"Request timed out. {e}")
         print(f"Request timed out. {e}")
         exit
     except requests.exceptions.RequestException as e:
+        logger.error(f"An error occured: {e}")
         print(f"An error occured: {e}")
         exit
 
-    
     return result
 
     
 def get_forecast():
     """
-    Takes the chosen loation, retrieves the items needed for the API call, 
+    Takes the chosen location, retrieves the items needed for the API call, 
     puts them all together then fetches the weather forecast as a JSON file.
     Once the forecast is retrieved, parses the JSON, prepares the output
     and prints it to the screen.
@@ -156,6 +172,7 @@ def get_forecast():
         # If there was some type of error, shows the user and log it
         logger.error(err)
         print(f"Error: [bold red]{err}[/bold red]")
+        exit
     else:
         # Load the JSON data
         wx_json = json.loads(r.text)
@@ -183,7 +200,7 @@ def get_conditions():
     """
     Similar to get_forecast(), excpet the URL is different.
     
-    Takes the chosen loation, retrieves the items needed for the API call, 
+    Takes the chosen location, retrieves the items needed for the API call, 
     puts them all together then fetches the weather forecast as a JSON file.
     Once the forecast is retrieved, parses the JSON, prepares the output
     and prints it to the screen.
@@ -194,7 +211,7 @@ def get_conditions():
     import utilities.terminal as term
 
     from rich import print
-    from rich.prompt import Prompt
+    #from rich.prompt import Prompt
     from tabulate import tabulate
 
     # Grab the logger we prepared when the script was started
@@ -221,6 +238,7 @@ def get_conditions():
     except Exception as err:
         logger.error(err)
         print(f"Error: [bold red]{err}[/bold red]")
+        exit
     else:
         wx_json = json.loads(r.text)
     
@@ -229,24 +247,24 @@ def get_conditions():
     title = f"Current Weather Conditions\nin {locale}"
     
      # The following statements really should be self-explanitory
-    if observations['temperature']['value'] != None:
+    if observations['temperature']['value'] is not None:
         temperature = f"{round(temp.c_to_f(observations['temperature']['value']))}{term.deg_sign} F"
     else:
         temperature = "N/A"
 
-    if observations['dewpoint']['value'] != None:
+    if observations['dewpoint']['value'] is not None:
         dewpoint = f"{round(temp.c_to_f(observations['dewpoint']['value']))}{term.deg_sign} F"
     else:
         dewpoint = "N/A"
 
-    if observations['relativeHumidity']['value'] != None:
+    if observations['relativeHumidity']['value'] is not None:
         humidity = f"{round(observations['relativeHumidity']['value'])}%"
     else:
         humidity = "N/A"
     
     wind_dir = observations['windDirection']['value']
 
-    if wind_dir == None:
+    if wind_dir is None:
         wind_dir = 0
     
     # Converts the direction in degrees to a cardinal value (i.e. N or NE)
@@ -255,7 +273,7 @@ def get_conditions():
 
     wind_speed = observations['windSpeed']['value']
 
-    if wind_speed == None:
+    if wind_speed is None:
         wind_speed = "0 mph"
     else:
         wind_speed = f"{round(speed.kph_to_mph(wind_speed))} mph"
@@ -298,7 +316,7 @@ def get_type():
 
 if __name__ == "__main__":
     # Prepare the logger
-    logger = prep_logger()
+    logger = prep_loggers()
     
     # Get the list of places for choices in the prompt
     places = get_places()
@@ -316,6 +334,7 @@ if __name__ == "__main__":
         choices=places,
         type=str
     )
+
     parser.add_argument(
         "--type",
         "-t",
@@ -326,12 +345,12 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    if args.location != None:
+    if args.location is not None:
         location = args.location
     else:
         location = get_location()
         
-    if args.type != None:
+    if args.type is not None:
         type = args.type
         
         if type == "forecast":
