@@ -2,7 +2,7 @@
 #
 # You can obtain the NOAA Office and Station ID by visiting https://www.weather.gov
 # and searching for your city and state. Once you get to that page, hover your
-# mouse over the link below "You local forecast office is", look for 
+# mouse over the link below "You local forecast office is", look for
 # the letters after the last slash in the link.
 # The station_id will be in parentheses following "Current conditions at..."
 
@@ -18,6 +18,8 @@ file = "/var/log/weather.log"
 # noaa_office = "{AAA}"   # See above about obtaining this info
 # locale = "{City, ST}"   # This can be whatever you want
 # station_id = "{ABCD}"   # See above about obtaining this info
+# noaa_grid_x = {123}     # Can be found by using the URL:
+# noaa_grid_y = {45}      # https://api.weather.gov/points/{latitude},{longitude}
 # default = "{True or False}" # Whether or now
 
 [[stations]]
@@ -25,6 +27,8 @@ name = "Bullhead"
 noaa_office = "VEF"
 locale = "Bullhead City, AZ"
 station_id = "KIFP"
+noaa_grid_x = 137
+noaa_grid_y = 50
 default = "False"
 
 [[stations]]
@@ -32,6 +36,8 @@ name = "Kingman"
 noaa_office = "VEF"
 locale = "Kingman, AZ"
 station_id = "KIGM"
+noaa_grid_x = 160
+noaa_grid_y = 51
 default = "True"
 
 [[stations]]
@@ -39,6 +45,8 @@ name = "Havasu"
 noaa_office = "VEF"
 locale = "Lake Havasu City, AZ"
 station_id = "KHII"
+noaa_grid_x = 142
+noaa_grid_y = 21
 default = "False"
 
 [[stations]]
@@ -46,6 +54,8 @@ name = "Prescott"
 noaa_office = "FGZ"
 locale = "Prescott, AZ"
 station_id = "KPRC"
+noaa_grid_x = 43
+noaa_grid_y = 68
 default = "False"
 
 [[stations]]
@@ -53,5 +63,6 @@ name = "Payson"
 noaa_office = "FGZ"
 locale = "Payson, AZ"
 station_id = "KPAN"
+noaa_grid_x = 80
+noaa_grid_y = 46
 default = "False"
-
