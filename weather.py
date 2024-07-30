@@ -53,7 +53,9 @@ def prep_loggers():
 
 
 def get_places():
-    """Creates a list of places to be used in the prompt
+    """Creates a list of places to be used in the prompt.
+    
+    Also finds and sets the default station of the prompt.
 
     Returns:
         list: List of places to be used in the prompt
@@ -61,19 +63,13 @@ def get_places():
     global default
     global logger
 
-    places = []
+    places = [s['name'] for s in stations]
     
-    # Loop through all of the stations and get the names to use in our prompt
-    # Stations are retrieved from the config file
-    for station in stations:
-        places.append(station['name'])
-        
-        # Determine which station should be our default
-        if station['default'] == "True":
-            default = station['name']
-            
-            if DEBUG:
-                logger.info(f"Default station: {default}")
+    d = [s['name'] for s in stations if s['default'] == 'True']
+    default = ''.join(d)
+    
+    if DEBUG:
+        logger.info(f"Default station: {default}")
     
     return places
 
