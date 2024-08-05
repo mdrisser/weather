@@ -11,10 +11,7 @@ from rich.prompt import IntPrompt
 
 
 CONFIG_DIR = "/home/mike/.config/weather/"
-
 DEBUG = False
-location = ""
-wx = 0
 
 # Read the TOML configuration file
 with open(f"{CONFIG_DIR}weather.toml", "rb") as f:
@@ -30,7 +27,7 @@ noaa_office = ""
 def prep_loggers():
     """Prepare loggers """
     logger = logging.getLogger('weather_logger')
-    
+
     # Create a formatter
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -39,39 +36,17 @@ def prep_loggers():
         debug_handler.setLevel(logging.DEBUG)
         debug_handler.setFormatter(formatter)
         logger.addHandler(debug_handler)
-        
+
     # Prepare a file logger for warnings and errors
     file_handler = logging.FileHandler(config['log']['file'])
     file_handler.setLevel(logging.WARNING)
-    
+
     file_handler.setFormatter(formatter)
 
     # Add the handlers to the logger
     logger.addHandler(file_handler)
 
     return logger
-
-
-def get_places():
-    """Creates a list of places to be used in the prompt.
-    
-    Also finds and sets the default station of the prompt.
-
-    Returns:
-        list: List of places to be used in the prompt
-    """
-    global default
-    global logger
-
-    places = [s['name'] for s in stations]
-    
-    d = [s['name'] for s in stations if s['default'] == 'True']
-    default = ''.join(d)
-    
-    if DEBUG:
-        logger.info(f"Default station: {default}")
-    
-    return places
 
 
 def addrow(tbl,d):
@@ -89,7 +64,7 @@ def addrow(tbl,d):
     else:
         # Otherwise, set precip to the value provided in the dictionary
         precip = f"{d['probabilityOfPrecipitation']['value']}%"
-    
+
     # Finally, add the row to the table that was passed in the function arguments
     tbl.add_row(d['name'], str(d['temperature']) + d['temperatureUnit'], str(d['windSpeed']) + ' ' + d['windDirection'], d['shortForecast'], precip)
 
@@ -103,9 +78,9 @@ def fetch_results(url):
     Returns:
         request result: the result of the request
     """
-    
+
     req_headers = {'user-agent': 'weather.py/mdrisser@gmail.com'}
-    
+
     try:
         result = requests.get(url, headers=req_headers, timeout=5)
         result.raise_for_status()
@@ -128,10 +103,10 @@ def fetch_results(url):
 
     return result
 
-    
+
 def get_forecast():
     """
-    Takes the chosen location, retrieves the items needed for the API call, 
+    Takes the chosen location, retrieves the items needed for the API call,
     puts them all together then fetches the weather forecast as a JSON file.
     Once the forecast is retrieved, parses the JSON, prepares the output
     and prints it to the screen.
@@ -172,7 +147,7 @@ def get_forecast():
     else:
         # Load the JSON data
         wx_json = json.loads(r.text)
-        
+
         # Create the table to hold the forecast information
         table = Table(title=f"Weather Forecast for {locale}", box=rich.box.SIMPLE_HEAD, padding=0)
         table.add_column("Day", justify="right", style="white", no_wrap=True)
@@ -180,13 +155,13 @@ def get_forecast():
         table.add_column("Wind", justify="left", style="cyan", no_wrap=True)
         table.add_column("Forecast", justify="left", no_wrap=False)
         table.add_column("Chance of Precip.", justify="left", style="bold blue")
-        
+
         periods = wx_json['properties']['periods']
-        
+
         # Loop through each day/night in the forecast and add a row to the table for each day/night
-        # Had to create a custom function to do this as lambda doesn't like calling functions of objects (e.g. table.add_row()) 
-        list(map(lambda day: addrow(table, day), periods))   
-        
+        # Had to create a custom function to do this as lambda doesn't like calling functions of objects (e.g. table.add_row())
+        list(map(lambda day: addrow(table, day), periods))
+
         # Print the table out to the screen
         console = Console()
         console.print(table)
@@ -195,8 +170,8 @@ def get_forecast():
 def get_conditions():
     """
     Similar to get_forecast(), excpet the URL is different.
-    
-    Takes the chosen location, retrieves the items needed for the API call, 
+
+    Takes the chosen location, retrieves the items needed for the API call,
     puts them all together then fetches the weather forecast as a JSON file.
     Once the forecast is retrieved, parses the JSON, prepares the output
     and prints it to the screen.
@@ -237,11 +212,11 @@ def get_conditions():
         exit
     else:
         wx_json = json.loads(r.text)
-    
+
     # Start putting together the table to display to the user
     observations = wx_json['properties']
     title = f"Current Weather Conditions\nin {locale}"
-    
+
      # The following statements really should be self-explanitory
     if observations['temperature']['value'] is not None:
         temperature = f"{round(temp.c_to_f(observations['temperature']['value']))}{term.deg_sign} F"
@@ -257,12 +232,12 @@ def get_conditions():
         humidity = f"{round(observations['relativeHumidity']['value'])}%"
     else:
         humidity = "N/A"
-    
+
     wind_dir = observations['windDirection']['value']
 
     if wind_dir is None:
         wind_dir = 0
-    
+
     # Converts the direction in degrees to a cardinal value (i.e. N or NE)
     cardinal = Convert.angle_to_card(wind_dir)
     wind_direction = f"{cardinal} ({wind_dir}{term.deg_sign})"
@@ -291,7 +266,7 @@ def get_conditions():
     ]
 
     print(title)
-    
+
     # Generate the table and print it to the screen
     print(tabulate(wx_data))
 
@@ -300,31 +275,37 @@ def get_location():
     # Ask the user which station to get the information from
      # Prompt and IntPrompt both handle invalid input for us
     location = Prompt.ask("Get weather for which city?", choices=places, default=default)
-    
+
     return location
 
 
 def get_type():
     wx = IntPrompt.ask("Get 1) Forecast or 2) Conditions?", choices=["1","2"], default=2)
-    
+
     return wx
 
 
 if __name__ == "__main__":
     # Prepare the logger
     logger = prep_loggers()
-    
+
     # Get the list of places for choices in the prompt
-    places = get_places()
-    
+    #places = get_places()
+    places = [s['name'] for s in stations]
+
+    d = [s['name'] for s in stations if s['default'] == 'True']
+    default = ''.join(d)
+
+    if DEBUG:
+        logger.info(f"Default station: {default}")
+
     # Build an argument parser using the built-in argparse module
     parser = argparse.ArgumentParser(
         prog="weather.py",
         description="Fetch weather forecast or current conditions for a location."
     )
-    
+
     parser.add_argument(
-        "--location",
         "-l",
         help="Location to retrieve weather for",
         choices=places,
@@ -332,30 +313,29 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--type",
         "-t",
         help="Type of weather information, either forecast or current",
         choices=["forecast", "current"],
         type=str
     )
-    
+
     args = parser.parse_args()
-    
-    if args.location is not None:
-        location = args.location
+
+    if args.l is not None:
+        location = args.l
     else:
         location = get_location()
-        
-    if args.type is not None:
-        type = args.type
-        
+
+    if args.t is not None:
+        type = args.t
+
         if type == "forecast":
             wx = 1
         else:
             wx = 2
     else:
         wx = get_type()
-    
+
     # Get the forecast or current conditions as the user chose
     if wx == 1:
         get_forecast()
@@ -363,6 +343,6 @@ if __name__ == "__main__":
         get_conditions()
     else:
         print("There was an error, please try again.")
-    
+
     # A final blank line to keep things neat and clean
     print()
