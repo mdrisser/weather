@@ -10,7 +10,7 @@ from rich.prompt import Prompt
 from rich.prompt import IntPrompt
 
 
-CONFIG_DIR = "/home/mike/.config/weather/"
+CONFIG_DIR = "/home/user/.config/weather/"
 DEBUG = False
 
 # Read the TOML configuration file
