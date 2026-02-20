@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-import argparse
 import json
 import logging
 import requests
@@ -8,6 +7,7 @@ import tomllib
 
 from rich.prompt import Prompt
 from rich.prompt import IntPrompt
+from simple_term_menu import TerminalMenu
 
 
 CONFIG_DIR = "/home/mrisser/.config/weather/"
@@ -22,6 +22,7 @@ with open(f"{CONFIG_DIR}weather.toml", "rb") as f:
 default = "N/A"
 places = []
 noaa_office = ""
+location = ""
 
 
 def prep_loggers():
@@ -149,7 +150,7 @@ def get_forecast():
         wx_json = json.loads(r.text)
 
         # Create the table to hold the forecast information
-        table = Table(title=f"Weather Forecast for {locale}", box=rich.box.SIMPLE_HEAD, padding=0)
+        table = Table(title=f"NOAA Weather Forecast for {locale}", box=rich.box.SIMPLE_HEAD, padding=0)
         table.add_column("Day", justify="right", style="white", no_wrap=True)
         table.add_column("Temp", justify="left", style="bold red", no_wrap=True)
         table.add_column("Wind", justify="left", style="cyan", no_wrap=True)
@@ -165,6 +166,7 @@ def get_forecast():
         # Print the table out to the screen
         console = Console()
         console.print(table)
+        print()
 
 
 def get_conditions():
@@ -182,7 +184,7 @@ def get_conditions():
     import utilities.terminal as term
 
     from rich import print
-    #from rich.prompt import Prompt
+    from rich.prompt import Prompt
     from tabulate import tabulate
 
     # Grab the logger we prepared when the script was started
@@ -215,7 +217,7 @@ def get_conditions():
 
     # Start putting together the table to display to the user
     observations = wx_json['properties']
-    title = f"Current Weather Conditions\nin {locale}"
+    title = f"NOAA Current Weather Conditions\nin {locale}"
 
      # The following statements really should be self-explanitory
     if observations['temperature']['value'] is not None:
@@ -269,80 +271,31 @@ def get_conditions():
 
     # Generate the table and print it to the screen
     print(tabulate(wx_data))
+    print()
 
 
-def get_location():
-    # Ask the user which station to get the information from
-     # Prompt and IntPrompt both handle invalid input for us
-    location = Prompt.ask("Get weather for which city?", choices=places, default=default)
+def wx_type_menu():
+    opts = ["Forecast", "Conditions"]
+    term_menu = TerminalMenu(opts, title="Weather Type")
+    menu_choice = term_menu.show()
+    wx_type = opts[menu_choice]
 
-    return location
+    if wx_type == "Forecast":
+        get_forecast()
+    else:
+        get_conditions()
 
 
-def get_type():
-    wx = IntPrompt.ask("Get 1) Forecast or 2) Conditions?", choices=["1","2"], default=2)
-
-    return wx
-
+def main_menu() -> None:
+    global location
+    opts = ["Bullhead", "Flagstaff", "Havasu", "Kingman", "Kearny", "Payson", "Phoenix", "Prescott"]
+    term_menu = TerminalMenu(opts, title="Locations")
+    menu_choice = term_menu.show()
+    location = opts[menu_choice]
+    wx_type_menu()
 
 if __name__ == "__main__":
     # Prepare the logger
     logger = prep_loggers()
-
-    # Get the list of places for choices in the prompt
-    #places = get_places()
-    places = [s['name'] for s in stations]
-
-    d = [s['name'] for s in stations if s['default'] == 'True']
-    default = ''.join(d)
-
-    if DEBUG:
-        logger.info(f"Default station: {default}")
-
-    # Build an argument parser using the built-in argparse module
-    parser = argparse.ArgumentParser(
-        prog="weather.py",
-        description="Fetch weather forecast or current conditions for a location."
-    )
-
-    parser.add_argument(
-        "-l",
-        help="Location to retrieve weather for",
-        choices=places,
-        type=str
-    )
-
-    parser.add_argument(
-        "-t",
-        help="Type of weather information, either forecast or current",
-        choices=["forecast", "current"],
-        type=str
-    )
-
-    args = parser.parse_args()
-
-    if args.l is not None:
-        location = args.l
-    else:
-        location = get_location()
-
-    if args.t is not None:
-        type = args.t
-
-        if type == "forecast":
-            wx = 1
-        else:
-            wx = 2
-    else:
-        wx = get_type()
-
-    # Get the forecast or current conditions as the user chose
-    if wx == 1:
-        get_forecast()
-    elif wx == 2:
-        get_conditions()
-    else:
-        print("There was an error, please try again.")
-
-    # A final blank line to keep things neat and clean
     print()
+    main_menu()
