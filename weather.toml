@@ -32,6 +32,33 @@ noaa_grid_y = 50
 default = "False"
 
 [[stations]]
+name = "Flagstaff"
+noaa_office = "FGZ"
+locale = "Flagstaff, AZ"
+station_id = "KFLG"
+noaa_grid_x = 73
+noaa_grid_y = 86
+default = "False"
+
+[[stations]]
+name = "Havasu"
+noaa_office = "VEF"
+locale = "Lake Havasu City, AZ"
+station_id = "KHII"
+noaa_grid_x = 142
+noaa_grid_y = 21
+default = "False"
+
+[[stations]]
+name = "Kearny"
+noaa_office = "TWC"
+locale = "Kearny, AZ"
+station_id = "AS628"
+noaa_grid_x = 98
+noaa_grid_y = 85
+default = "False"
+
+[[stations]]
 name = "Kingman"
 noaa_office = "VEF"
 locale = "Kingman, AZ"
@@ -41,12 +68,12 @@ noaa_grid_y = 51
 default = "True"
 
 [[stations]]
-name = "Havasu"
-noaa_office = "VEF"
-locale = "Lake Havasu City, AZ"
-station_id = "KHII"
-noaa_grid_x = 142
-noaa_grid_y = 21
+name = "Payson"
+noaa_office = "FGZ"
+locale = "Payson, AZ"
+station_id = "KPAN"
+noaa_grid_x = 80
+noaa_grid_y = 46
 default = "False"
 
 [[stations]]
@@ -59,10 +86,10 @@ noaa_grid_y = 68
 default = "False"
 
 [[stations]]
-name = "Payson"
-noaa_office = "FGZ"
-locale = "Payson, AZ"
-station_id = "KPAN"
-noaa_grid_x = 80
-noaa_grid_y = 46
+name = "Phoenix"
+noaa_office = "PSR"
+locale = "Phoenix, AZ"
+station_id = "KPHX"
+noaa_grid_x = 161
+noaa_grid_y = 57
 default = "False"
