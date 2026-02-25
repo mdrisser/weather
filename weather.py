@@ -1,4 +1,23 @@
 #!/usr/bin/python3
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "ansiwrap==0.8.4",
+#     "certifi==2024.7.4",
+#     "charset-normalizer==3.3.2",
+#     "idna==3.7",
+#     "markdown-it-py==3.0.0",
+#     "mdurl==0.1.2",
+#     "pygments==2.18.0",
+#     "requests==2.32.3",
+#     "rich==13.7.1",
+#     "simple-term-menu==1.6.6",
+#     "six==1.17.0",
+#     "tabulate==0.9.0",
+#     "textwrap3==0.9.2",
+#     "urllib3==2.2.2",
+# ]
+# ///
 
 import json
 import logging
@@ -23,6 +42,10 @@ default = "N/A"
 places = []
 noaa_office = ""
 location = ""
+
+# These are the styles to be used when building the menus later
+menu_highlight = ("fg_black", "bg_yellow", "bold")
+menu_cursor = ("fg_yellow", "bold")
 
 
 def prep_loggers():
@@ -275,23 +298,29 @@ def get_conditions():
 
 
 def wx_type_menu():
-    opts = ["Forecast", "Conditions"]
-    term_menu = TerminalMenu(opts, title="Weather Type")
+    opts = ["Forecast", "Conditions", "Quit"]
+    term_menu = TerminalMenu(opts, title="Weather Type", menu_highlight_style=menu_highlight, menu_cursor_style=menu_cursor)
     menu_choice = term_menu.show()
     wx_type = opts[menu_choice]
 
     if wx_type == "Forecast":
         get_forecast()
-    else:
+    elif wx_type == "Conditions":
         get_conditions()
+    else:
+        exit()
 
 
 def main_menu() -> None:
     global location
-    opts = ["Bullhead", "Flagstaff", "Havasu", "Kingman", "Kearny", "Payson", "Phoenix", "Prescott"]
-    term_menu = TerminalMenu(opts, title="Locations")
+    opts = ["Bullhead", "Flagstaff", "Havasu", "Kingman", "Kearny", "Payson", "Phoenix", "Prescott", "Quit"]
+    term_menu = TerminalMenu(opts, title="Locations", menu_highlight_style=menu_highlight, menu_cursor_style=menu_cursor)
     menu_choice = term_menu.show()
     location = opts[menu_choice]
+
+    if location == "Quit":
+        exit()
+
     wx_type_menu()
 
 if __name__ == "__main__":
