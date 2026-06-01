@@ -20,76 +20,109 @@ file = "/var/log/weather.log"
 # station_id = "{ABCD}"   # See above about obtaining this info
 # noaa_grid_x = {123}     # Can be found by using the URL:
 # noaa_grid_y = {45}      # https://api.weather.gov/points/{latitude},{longitude}
+# zone_id = {XXX123}	  # The zone id for the lat and lon from the above URL. Tail end of the string
 # default = "{True or False}" # Whether or now
 
 [[stations]]
 name = "Bullhead"
+latitude = "35.1548"
+longitude = "-114.5565"
 noaa_office = "VEF"
 locale = "Bullhead City, AZ"
 station_id = "KIFP"
 noaa_grid_x = 137
 noaa_grid_y = 50
+zone_id = "AZZ571"
+radar_station = "KESX"
 default = "False"
 
 [[stations]]
 name = "Flagstaff"
+latitude = "35.1840"
+longitude = "-111.7393"
 noaa_office = "FGZ"
 locale = "Flagstaff, AZ"
 station_id = "KFLG"
 noaa_grid_x = 73
 noaa_grid_y = 86
+zone_id = "AZZ105"
+radar_station = "KFSX"
 default = "False"
 
 [[stations]]
 name = "Havasu"
+latitude = "34.5672"
+longitude = "-114.3591"
 noaa_office = "VEF"
 locale = "Lake Havasu City, AZ"
 station_id = "KHII"
 noaa_grid_x = 142
 noaa_grid_y = 21
+zone_id = "AZZ002"
+radar_station = "KESX"
 default = "False"
 
 [[stations]]
 name = "Kearny"
+latitude = "33.0592"
+longitude = "-110.9063"
 noaa_office = "TWC"
 locale = "Kearny, AZ"
 station_id = "AS628"
 noaa_grid_x = 98
 noaa_grid_y = 85
+zone_id = "AZZ506"
+radar_station = "KIWA"
 default = "False"
 
 [[stations]]
+latitude = "35.2584"
+longitude = "-113.9446"
 name = "Kingman"
 noaa_office = "VEF"
 locale = "Kingman, AZ"
 station_id = "KIGM"
 noaa_grid_x = 160
 noaa_grid_y = 51
+zone_id = "AZZ576"
+radar_station = "KESX"
 default = "True"
 
 [[stations]]
 name = "Payson"
+latitude = "34.2561"
+longitude = "-111.3388"
 noaa_office = "FGZ"
 locale = "Payson, AZ"
 station_id = "KPAN"
 noaa_grid_x = 80
 noaa_grid_y = 46
+zone_id = "AZZ018"
+radar_station = "KFSX"
 default = "False"
 
 [[stations]]
 name = "Prescott"
+latitude = "34.5409"
+longitude = "-112.4693"
 noaa_office = "FGZ"
 locale = "Prescott, AZ"
 station_id = "KPRC"
 noaa_grid_x = 43
 noaa_grid_y = 68
+zone_id = "AZZ008"
+radar_station = "KFSX"
 default = "False"
 
 [[stations]]
 name = "Phoenix"
+latitude = "33.4355"
+longitude = "-112.0094"
 noaa_office = "PSR"
 locale = "Phoenix, AZ"
 station_id = "KPHX"
 noaa_grid_x = 161
 noaa_grid_y = 57
+zone_id = "AZZ543"
+radar_station = "KIWA"
 default = "False"
