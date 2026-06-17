@@ -1,32 +1,25 @@
-#!/usr/bin/python3
-# /// script
-# requires-python = ">=3.14"
-# dependencies = [
-#     "ansiwrap==0.8.4",
-#     "certifi==2024.7.4",
-#     "charset-normalizer==3.3.2",
-#     "idna==3.7",
-#     "markdown-it-py==3.0.0",
-#     "mdurl==0.1.2",
-#     "pygments==2.18.0",
-#     "requests==2.32.3",
-#     "rich==13.7.1",
-#     "simple-term-menu==1.6.6",
-#     "six==1.17.0",
-#     "tabulate==0.9.0",
-#     "textwrap3==0.9.2",
-#     "urllib3==2.2.2",
-# ]
-# ///
+#!/usr/bin/env python3
 
 import json
 import logging
 import requests
 import tomllib
 
+import convert.convert as Convert
+import convert.temperature as temp
+import convert.speed as speed
+import utilities.terminal as term
+
+from rich import box
+from rich import print
+from rich.console import Console
+from rich.layout import Layout
+from rich.markdown import Markdown
+from rich.panel import Panel
 from rich.prompt import Prompt
-from rich.prompt import IntPrompt
+from rich.table import Table
 from simple_term_menu import TerminalMenu
+from tabulate import tabulate
 
 
 CONFIG_DIR = "/home/mrisser/.config/weather/"
@@ -41,36 +34,34 @@ with open(f"{CONFIG_DIR}weather.toml", "rb") as f:
 default = "N/A"
 places = []
 noaa_office = ""
-location = ""
+#location = ""
 
 # These are the styles to be used when building the menus later
 menu_highlight = ("fg_black", "bg_yellow", "bold")
 menu_cursor = ("fg_yellow", "bold")
 
+layout = Layout()
 
-def prep_loggers():
-    """Prepare loggers """
-    logger = logging.getLogger('weather_logger')
+"""Prepare loggers """
+logger = logging.getLogger(__name__)
 
-    # Create a formatter
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Create a formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    if DEBUG:
-        debug_handler = logging.getLogger('debug_logger')
-        debug_handler.setLevel(logging.DEBUG)
-        debug_handler.setFormatter(formatter)
-        logger.addHandler(debug_handler)
+if DEBUG:
+    debug_handler = logging.getLogger(__name__ + '-debug_logger')
+    debug_handler.setLevel(logging.DEBUG)
+    debug_handler.setFormatter(formatter)
+    logger.addHandler(debug_handler)
 
-    # Prepare a file logger for warnings and errors
-    file_handler = logging.FileHandler(config['log']['file'])
-    file_handler.setLevel(logging.WARNING)
+# Prepare a file logger for warnings and errors
+file_handler = logging.FileHandler(config['log']['file'])
+file_handler.setLevel(logging.WARNING)
 
-    file_handler.setFormatter(formatter)
+file_handler.setFormatter(formatter)
 
-    # Add the handlers to the logger
-    logger.addHandler(file_handler)
-
-    return logger
+# Add the handlers to the logger
+logger.addHandler(file_handler)
 
 
 def addrow(tbl,d):
@@ -128,17 +119,13 @@ def fetch_results(url):
     return result
 
 
-def get_forecast():
+def get_forecast(location):
     """
     Takes the chosen location, retrieves the items needed for the API call,
     puts them all together then fetches the weather forecast as a JSON file.
     Once the forecast is retrieved, parses the JSON, prepares the output
     and prints it to the screen.
     """
-    import rich.box
-    from rich import print
-    from rich.console import Console
-    from rich.table import Table
 
     # Grab the logger we prepared when the script was started
     global logger
@@ -173,7 +160,7 @@ def get_forecast():
         wx_json = json.loads(r.text)
 
         # Create the table to hold the forecast information
-        table = Table(title=f"NOAA Weather Forecast for {locale}", box=rich.box.SIMPLE_HEAD, padding=0)
+        table = Table(title=locale, box=box.SIMPLE_HEAD, padding=0)
         table.add_column("Day", justify="right", style="white", no_wrap=True)
         table.add_column("Temp", justify="left", style="bold red", no_wrap=True)
         table.add_column("Wind", justify="left", style="cyan", no_wrap=True)
@@ -186,29 +173,18 @@ def get_forecast():
         # Had to create a custom function to do this as lambda doesn't like calling functions of objects (e.g. table.add_row())
         list(map(lambda day: addrow(table, day), periods))
 
-        # Print the table out to the screen
-        console = Console()
-        console.print(table)
-        print()
+        return table
 
 
-def get_conditions():
+def get_conditions(location):
     """
-    Similar to get_forecast(), excpet the URL is different.
+    Similar to get_forecast(), except the URL is different.
 
     Takes the chosen location, retrieves the items needed for the API call,
     puts them all together then fetches the weather forecast as a JSON file.
     Once the forecast is retrieved, parses the JSON, prepares the output
     and prints it to the screen.
     """
-    import convert.convert as Convert
-    import convert.temperature as temp
-    import convert.speed as speed
-    import utilities.terminal as term
-
-    from rich import print
-    from rich.prompt import Prompt
-    from tabulate import tabulate
 
     # Grab the logger we prepared when the script was started
     global logger
@@ -240,7 +216,7 @@ def get_conditions():
 
     # Start putting together the table to display to the user
     observations = wx_json['properties']
-    title = f"NOAA Current Weather Conditions\nin {locale}"
+    #title = f"NOAA Current Weather Conditions\nin {locale}"
 
      # The following statements really should be self-explanitory
     if observations['temperature']['value'] is not None:
@@ -280,35 +256,52 @@ def get_conditions():
     else:
         gust = "None"
 
-    # Put it all together so that tabulate() can generate the table
-    wx_data = [
-        ['Temperature', temperature],
-        ['Dewpoint', dewpoint],
-        ['Humidity', humidity],
-        ['Wind Direction', wind_direction],
-        ['Wind Speed', wind_speed],
-        ['Wind Gust', gust],
-    ]
+    table = Table(title=locale, box=box.SIMPLE_HEAD, padding=0)
+    table.add_row('Temperature', temperature)
+    table.add_row('Dewpoint', dewpoint)
+    table.add_row('Humidity', humidity)
+    table.add_row('Wind Direction', wind_direction)
+    table.add_row('Wind Speed', wind_speed)
+    table.add_row('Wind Gust', gust)
 
-    print(title)
-
-    # Generate the table and print it to the screen
-    print(tabulate(wx_data))
-    print()
+    return table
 
 
-def wx_type_menu():
-    opts = ["Forecast", "Conditions", "Quit"]
-    term_menu = TerminalMenu(opts, title="Weather Type", menu_highlight_style=menu_highlight, menu_cursor_style=menu_cursor)
-    menu_choice = term_menu.show()
-    wx_type = opts[menu_choice]
+def draw_layout():
+    global layout
 
-    if wx_type == "Forecast":
-        get_forecast()
-    elif wx_type == "Conditions":
-        get_conditions()
-    else:
-        exit()
+    TITLE = """
+    # LOCAL WEATHER
+    """
+    title = Markdown(TITLE)
+
+    layout.split_column(
+        Layout(name="upper"),
+        Layout(name="lower")
+    )
+
+    layout['upper'].size = None
+    layout['upper'].ratio = 1
+    layout['upper'].update(title)
+    
+    layout['lower'].size = None
+    layout['lower'].ratio = 5
+    layout['lower'].split_row(
+        Layout(name="lower_left"),
+        Layout(name="lower_right")
+    )
+
+
+def update_layout(wx_condx, wx_forcst, location):
+    global layout
+
+    layout['lower_left'].update(
+        Panel(wx_condx, title="[bold yellow]NOAA CURRENT CONDITIONS[/bold yellow]")
+    )
+
+    layout['lower_right'].update(
+        Panel(wx_forcst, title="[bold green]NOAA FORECAST[/bold green]")
+    )
 
 
 def main_menu() -> None:
@@ -321,10 +314,15 @@ def main_menu() -> None:
     if location == "Quit":
         exit()
 
-    wx_type_menu()
+    #wx_type_menu()
+    return location
+
 
 if __name__ == "__main__":
-    # Prepare the logger
-    logger = prep_loggers()
-    print()
-    main_menu()
+    loc = main_menu()
+    condx = get_conditions(loc)
+    frcst = get_forecast(loc)
+
+    draw_layout()
+    update_layout(condx, frcst, loc)
+    print(layout)
