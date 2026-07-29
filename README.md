@@ -1,4 +1,4 @@
-⚠️ **Disclaimer**: This project was built to scratch a personal itch (learning, solving a problem, or adding a feature I wanted). It's provided as-is with no guaranteed support — I'll only fix bugs I personally hit. Forks are welcome under the original license. Please refer to the file DISCLAIMER.md for more detailed information.
+⚠️ **Disclaimer**: This project was built to scratch a personal itch (learning, solving a problem, or adding a feature I wanted). It's provided as-is with no guaranteed support — I'll only fix bugs I personally hit. Forks are welcome under the original license. Please refer to the file [DISCLAIMER.md](DISCLAIMER.md) for more detailed information.
 
 # Weather
 A small Python command line application that fetches weather information from weather.gov and displays it in the terminal.
